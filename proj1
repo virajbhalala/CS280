@@ -1,0 +1,336 @@
+//
+//  main.cpp
+//  280Project1
+//
+//  Created by Viraj Bhalala on 9/22/14.
+//  Copyright (c) 2014 Viraj Bhalala. All rights reserved.
+//
+/*
+
+SHORT DESCRPTION OF THIS PROGRAM
+********************************
+This program converts words/multiplelines/file from English to piglatin AND Piglatin to English depending upon what the user
+wants (MODE)
+
+********
+converting to piglatin
+if word begins with vowel then add "way" to the end of the end
+ex. Apple -> Appleway
+
+if word does not starts with vowel then move all leading consonants to the end of the word and then add "ay"
+ex. Fish becomes Ishfay
+
+
+*******
+
+Of course code could be finished in few lines if the goal was to only do this but is little bit complicated
+Goal was to preserve and remember positions puntuation and capital letters. 
+
+*********
+
+Examples:
+*********
+
+[Original String]
+Hello there, Person. How’s tricks anyway?
+topsy-turvy
+
+[PigLatin converted string]
+Ellohay erethay, Ersonpay. Ow’shay ickstray anywayway?
+opsytay-urvytay
+
+i'm talking to you    [orinal string]
+i'mway alkingtay otay ouyay    [convereted into piglatin]
+i'm talking to you        [converted that back into English]
+
+
+Don't touch me I'm a real live wire   [oringal string]
+On'tday ouchtay emay I'mway away ealray ivelay ireway   [convereted into piglatin]
+Don't touch me I'm a real live ire     [converted that back into English]
+
+**********************************************
+*/
+
+#include <iostream>
+#include <string>
+using namespace std;
+#include <vector>
+#include <sstream>
+#include <string>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <cstdio>
+
+
+bool vowelFinder (string);
+bool firstLetterVowel (string);
+string  FromPigTranslator(string);
+vector<string> SentenceSplitter(string);
+string FromPigSentenceBuilder(vector<string>);
+string  ToPigTranslator(string);
+string ToPigSentenceBuilder(vector<string>);
+
+
+
+int main(int argc, char *argv[]) // this is how command line args get passed in C++
+{
+    enum { TOPIG, FROMPIG } mode;
+    if( argc == 1 ) { // note one argument: the name of the program is in argv[0]
+        mode = TOPIG;
+    }
+    else if( argc != 2 ) {
+        // this is an error case
+        // print some kind of message
+        cout<< "Please type valid arguments";
+        return 1;
+    }
+    else {
+        string userArg = string(argv[1]); // turn the C string argument into a C++ string
+        if (userArg == "topig"){
+        //if( userArg.compare("topig")==0 ) {
+            mode = TOPIG;
+        }
+        else if( userArg == "frompig" ) {
+            mode = FROMPIG;
+        }
+        else {
+            // print some error!
+            return 1;
+        }
+        //}
+    }
+    
+    if (mode == TOPIG) {
+        cout << "Please write word or sentence to translate to pig latin" << endl;
+        char line[BUFSIZ];
+        while( cin.good() ) {
+            cin.getline(line, sizeof(line));
+            cout<<ToPigSentenceBuilder(SentenceSplitter(line)) <<"\n";
+        }
+
+    }
+    else{
+        cout << "Please write word or sentence to translate from Pig Latin to English" << endl;
+        char line[BUFSIZ];
+        while( cin.good() ) {
+            cin.getline(line, sizeof(line));
+            cout<<FromPigSentenceBuilder(SentenceSplitter(line)) <<"\n";
+            //cout << line << ":" << strlen(line) << endl;
+        }
+
+    }
+    
+    
+}
+
+
+
+
+//Splits the sentence/string into vector of words
+vector<string> SentenceSplitter(string input){
+    string currentWord;
+    vector<string> seperatedWords;
+    string final ="";
+    
+    //goes thru whole string (input)
+    for (int i =0; i<input.size();i++){
+        char a =input[i];
+        //When space is found breaks the sentence into word and add to vector
+        if (a == ' ' ){
+            seperatedWords.push_back(currentWord);
+            currentWord ="" ;
+        }
+        
+        else
+            // '-' are considered similar to space but are preserved. Break sentece into words when it sees '-'
+            if (a == '-' ){
+                seperatedWords.push_back(currentWord + "-");
+                currentWord ="";
+                
+                
+            }
+            else{
+                currentWord += a;
+                //cout <<"condition 3 "<< currentWord << "\n";
+            }
+    }
+    seperatedWords.push_back(currentWord);
+    
+    return seperatedWords;
+}
+
+
+
+//Translate each word into en englishguage.
+string FromPigTranslator(string word){
+    string translatedWord="";
+    vector<int> capitalIndexes;
+    for(int i=0; i<word.size();i++){
+        if (isupper(word[i])) {
+            capitalIndexes.push_back(i);
+            word[i]=tolower(word[i]);
+            //cout<< i;
+        }
+    }
+    
+    if (word.substr(word.length()-3).compare("way")==0) {
+        translatedWord =word.substr(0,word.length()-3);
+    }
+    
+    else{
+        translatedWord =word.substr(word.length()-3,1)   +   word.substr(0,word.length()-3);
+    }
+    if (capitalIndexes.size()>0){
+        for (int z=0; z<capitalIndexes.size(); z++) {
+            translatedWord[z] =toupper(translatedWord[z]);
+        }
+    }
+    
+    return translatedWord;
+}
+
+
+
+//take each word from vector the translate them and then make sentence back and return it.
+string FromPigSentenceBuilder(vector<string> wordVector){
+    string final ="";
+    // go thru each word
+    for (int i= 0; i<wordVector.size(); i++) {
+        string temp = wordVector.at(i);
+        
+        //store last char of the word in last
+        char last =temp[temp.length()-1];
+        stringstream ss;
+        string s;
+        ss << last;
+        ss >> s;
+        
+        //incase word is only one of the following then dont do anything
+        if (temp == "" || temp==" " ||temp =="," ||temp == "." ||temp == "!" ||temp == ";" ||temp == ":" || temp == "?") {
+            final=final+temp;
+        }
+        
+        //These punctutions are to be kept at same location but no space after it.
+        else if (last=='-'||last == '\n' ||last == '\0' ||last == '\\' ) {
+            final += FromPigTranslator(temp.substr(0,temp.length()-1)) + s;
+        }
+        
+        //These punctutaion are to be kept at same location but need to put space after it.
+        else
+            if (last ==',' ||last == '.' ||last == '!' ||last == ';' ||last == ':' ||last == '?') {
+                final += FromPigTranslator(temp.substr(0,temp.length()-1)) + s + " ";
+            }
+        //now deal with sapce.
+            else{
+                final =  final + FromPigTranslator(temp) + " ";
+            }
+    }
+    return final;
+}
+//checks if character is vowel or not.
+bool vowelFinder (char c){
+    char vowels[10] = {'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'};
+    for (int j =0; j<sizeof(vowels); j++) {
+        if (c == vowels[j]){
+            return true;
+        }
+    }
+    return false;
+}
+
+//checks first letter if its vowel or not
+bool firstLetterVowel (string str){
+    if (str[0] == 'a' ||str[0] == 'e' ||str[0] == 'i' ||str[0] == 'o' ||str[0] == 'u' ||str[0] == 'A' ||str[0] == 'E' ||str[0] == 'I' ||str[0] == 'O' ||str[0] == 'U' ){
+        return true;
+    }
+    return false;
+}
+
+//Translate each word into ToPig language.
+string ToPigTranslator(string word){
+    string translatedWord="";
+    string prefix="";
+    vector<int> capitalIndexes;
+    
+    // condition 1: if first letter vowel just add 'way' to the end
+    if (firstLetterVowel(word)){
+        translatedWord = word + "way";
+    }
+    
+    
+    //else go to other operation (
+    else{
+        for (int i=0; i<word.length();i++){
+            
+            
+            //check if char is upper. if upper save that location and later while forming the sentence back change that location back to upper. eg Mapple->Applemay
+            if (isupper(word[i])){
+                capitalIndexes.push_back(i);
+            }
+            
+            //lower all char.
+            char a =tolower(word[i]);
+            
+            //vowelfinder checks if that char is vowel
+            if (!vowelFinder(a)){
+                prefix+=a;
+            }
+            else{
+                break;
+            }
+        }
+        
+        //word starting from first vowel to end + previous removed part upto vowel + "ay" to the end
+        translatedWord = word.substr(prefix.length()) + prefix + "ay";
+        
+    }
+    
+    //make char capital back
+    if (capitalIndexes.size()>0){
+        for (int z=0; z<capitalIndexes.size(); z++) {
+            translatedWord[z] =toupper(translatedWord[z]);
+        }
+    }
+    return translatedWord;
+}
+
+//take each word from vector the translate them and then make sentence back and return it.
+string ToPigSentenceBuilder(vector<string> wordVector){
+    string final ="";
+    // go thru each word
+    for (int i= 0; i<wordVector.size(); i++) {
+        string temp = wordVector.at(i);
+        
+        //store last char of the word in last
+        char last =temp[temp.length()-1];
+        stringstream ss;
+        string s;
+        ss << last;
+        ss >> s;
+        
+        //incase word is only one of the following then dont do anything
+        if (temp == "" || temp==" " ||temp =="," ||temp == "." ||temp == "!" ||temp == ";" ||temp == ":" || temp == "?") {
+            final=final+temp;
+        }
+        //These punctutions are to be kept at same location but no space after it.
+        else if (last=='-'||last == '\n' ||last == '\0' ||last == '\\' ) {
+            final += ToPigTranslator(temp.substr(0,temp.length()-1)) + s;
+        }
+        
+        //These punctutaion are to be kept at same location but need to put space after it.
+        else
+            if (last ==',' ||last == '.' ||last == '!' ||last == ';' ||last == ':' ||last == '?') {
+                final += ToPigTranslator(temp.substr(0,temp.length()-1)) + s + " ";
+            }
+        //now deal with sapce.
+            else{
+                final =  final + ToPigTranslator(temp) + " ";
+            }
+    }
+    return final;
+}
+
+
+
+
